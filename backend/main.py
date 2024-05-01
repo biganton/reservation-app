@@ -5,7 +5,7 @@ from contextlib import contextmanager
 app = FastAPI()
 
 username = "BD_415123"
-password = "dupa123"
+password = "ProjektBazy2024AI"
 host = "dbmanage.lab.ii.agh.edu.pl"
 port = "1521"
 dsn = cx_Oracle.makedsn(host, port, sid="DBMANAGE")
@@ -54,6 +54,28 @@ def read_reservations():
                     for row in reservations
                 ]
         return {"reservations": reservations_list}
+    except HTTPException as e:
+        return e.detail
+
+
+@app.get("/table_types")
+def read_reservations():
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT type_id, type_name
+                    FROM table_types
+                """)
+                types = cursor.fetchall()
+                types_list = [
+                    {
+                        "type_id": row[0],
+                        "type_name": row[1]
+                    }
+                    for row in types
+                ]
+        return {"types": types_list}
     except HTTPException as e:
         return e.detail
 

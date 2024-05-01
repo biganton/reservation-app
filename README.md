@@ -6,7 +6,7 @@ To build an app run "docker-compose up"
 # reservation_app
  The "reservation_app" is designed for a single restaurant, enabling patrons to effortlessly book tables through an online platform while providing real-time information on table availability. It serves as an all-in-one reservation management and table optimization tool for the restaurant's staff.
 
-![alt text](./img/schema.png)
+![alt text](./img/schema2.png)
 
 ## Tables
 ### Tables: 
@@ -14,6 +14,11 @@ A table storing information about tables in a restaurant, containing fields such
 - table_id - Table ID
 - table_no - Table number 
 - no_seats - Number of seats
+
+### Table types: 
+A table storing types of the tables in the restaurant:
+- type_id - Type ID
+- type_name - Type 
 
 ### Reservations: 
 A table storing information about table reservations, containing fields such as:
