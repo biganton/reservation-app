@@ -4,7 +4,8 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider } from '@mui/material/styles';
-import theme from './theme'; // Zaimportuj swój motyw
+import theme from './theme'; 
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -12,6 +13,7 @@ root.render(
   <ThemeProvider theme={theme}>
     <React.StrictMode>
       <App />
+     
     </React.StrictMode>
   </ThemeProvider>
 );
