@@ -80,3 +80,48 @@ def read_reservations():
         return e.detail
 
 
+@app.get("/tables")
+def read_reservations():
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT table_id, no_seats, table_type_id
+                    FROM tables
+                """)
+                tables = cursor.fetchall()
+                tables_list = [
+                    {
+                        "table_id": row[0],
+                        "no_seats": row[1],
+                        "table_type_id": row[2]
+                    }
+                    for row in tables
+                ]
+        return {"tables": tables_list}
+    except HTTPException as e:
+        return e.detail
+
+@app.get("/customers")
+def read_reservations():
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT customer_id, firstname, lastname, phone_number, email
+                    FROM customers
+                """)
+                customers = cursor.fetchall()
+                customers_list = [
+                    {
+                        "customer_id": row[0],
+                        "firstname": row[1],
+                        "lastname": row[2],
+                        "phone_number": row[3],
+                        "email": row[4]
+                    }
+                    for row in customers
+                ]
+        return {"customers": customers_list}
+    except HTTPException as e:
+        return e.detail
