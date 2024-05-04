@@ -1,8 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 import cx_Oracle
 from contextlib import contextmanager
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List
+from datetime import datetime
+
+
 
 
 
@@ -69,28 +73,7 @@ def read_all_reservations():
         raise HTTPException(status_code=500, detail=str(e))
     
 
-# @app.get("/customer_reservations")
-# def read_reservations():
-#     try:
-#         with get_db_connection() as connection:
-#             with connection.cursor() as cursor:
-#                 cursor.execute("""
-#                     select * from table(F_CUSTOMER_RESERVATION_HISTORY(3))
-#                 """)
-#                 customers = cursor.fetchall()
-#                 customers_list = [
-#                     {
-#                         "reservation_id": row[0],
-#                         "table_id": row[1],
-#                         "lastname": row[2],
-#                         "phone_number": row[3],
-#                         "email": row[4]
-#                     }
-#                     for row in customers
-#                 ]
-#         return {"customers": customers_list}
-#     except HTTPException as e:
-#         return e.detail
+
     
 @app.get("/reservations/{customer_id}")
 def read_reservations(customer_id: int):
@@ -115,7 +98,7 @@ def read_reservations(customer_id: int):
                         "no_guests": row[5],
                         "status": row[6],
                         "notes": row[7]
-                        
+
                     } for row in customers
                 ]
         return {"customers": customers_list}
@@ -221,3 +204,64 @@ def add_customer(customer: Customer):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
 
+class Reservation(BaseModel):
+    table_id: int
+    customer_id: int
+    start_date: datetime
+    end_date: datetime
+    no_guests: int
+    notes: str
+
+
+@app.post("/add_reservation")
+def add_reservation(reservation: Reservation):
+    sql = """
+    BEGIN
+        p_add_reservation(
+            p_table_id => :table_id,
+            p_customer_id => :customer_id,
+            p_date_start => :start_date,
+            p_date_end => :end_date,
+            p_no_guests => :no_guests,
+            p_notes => :notes
+        );
+    END;
+    """
+    try:
+        with get_db_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(sql, {
+                "table_id": reservation.table_id,
+                "customer_id": reservation.customer_id,
+                "start_date": reservation.start_date,
+                "end_date": reservation.end_date,
+                "no_guests": reservation.no_guests,
+                "notes": reservation.notes
+            })
+            connection.commit()
+            return {"message": "Reservation added successfully"}
+    except Exception as e:
+        connection.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+
+@app.get("/available_tables")
+def available_tables(start_date: datetime, end_date: datetime):
+    """Endpoint to fetch available tables within a specified time range."""
+    sql = """
+        SELECT * FROM TABLE(f_tables_availability_hours(:start_date, :end_date))
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, {'start_date': start_date, 'end_date': end_date})
+                result = cursor.fetchall()
+                tables = [{
+                    'table_id': row[0],
+                    'no_seats': row[1],
+                    'table_type_id': row[2]
+                } for row in result]
+        return {'available_tables': tables}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
