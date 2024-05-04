@@ -7,6 +7,7 @@ import NavBar from './components/NavBar';
 import Reservations from './components/Reservations';
 import AddCustomer from './components/AddCustomer';
 import Customers from './components/Customers';
+import MakeReservation from './components/MakeReservation';
 function App() {
   return (
     <Router>
@@ -20,6 +21,8 @@ function App() {
         <Route path="/customers" element={<Customers />} />
         <Route path="/reservations/:customerId" element={<Reservations />} />
         <Route path="/reservations/today" element={<Reservations />} />
+        <Route path="/make-reservation" element={<MakeReservation />} />
+
 
 
       </Routes>
