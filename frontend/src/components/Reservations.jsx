@@ -1,83 +1,68 @@
-import React, { useState } from 'react';
-import { Button, Table, TableBody, TableCell, TableHead, TableRow, Paper, TableContainer, TextField } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@mui/material';
 
 function Reservations() {
-    const [reservations, setReservations] = useState([
-        { id: 1, date: '2024-05-01', status: 'confirmed', customer: 'John Doe' },
-        { id: 2, date: '2024-05-02', status: 'pending', customer: 'Jane Smith' },
-        { id: 3, date: '2024-05-03', status: 'cancelled', customer: 'Alice Johnson' },
-    ]);
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
-    const [searchTerm, setSearchTerm] = useState('');
+    const [reservations, setReservations] = useState([]);
+    const { customerId } = useParams(); // This will be undefined if no ID is in the URL
 
-    // Function to handle sorting
-    const handleSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-
-        setReservations((prevReservations) => {
-            const sortedReservations = [...prevReservations].sort((a, b) => {
-                if (a[key] < b[key]) {
-                    return direction === 'ascending' ? -1 : 1;
+    useEffect(() => {
+        const url = customerId ? `http://localhost:8000/reservations/${customerId}` : 'http://localhost:8000/reservations';
+        fetch(url)
+            .then(response => {
+                if (!response.ok) {
+                    // If not OK, throw an error to jump to the catch block
+                    throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 }
-                if (a[key] > b[key]) {
-                    return direction === 'ascending' ? 1 : -1;
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetched data:', data); // Debugging: log the fetched data
+                // Check if data contains the expected array format
+                if (data.customers) { // Make sure to access the correct key if the response is wrapped in an object
+                    setReservations(data.customers);
+                } else if (Array.isArray(data)) {
+                    setReservations(data);
+                } else {
+                    throw new Error('Data is not in expected array format');
                 }
-                return 0;
+            })
+            .catch(error => {
+                console.error('Error fetching reservations:', error.message);
+                setReservations([]); // Set to empty array on error
             });
-            return sortedReservations;
-        });
-    };
-
-    // Function to filter reservations based on search term
-    const handleSearch = (event) => {
-        setSearchTerm(event.target.value.toLowerCase());
-    };
-
-    // Filter reservations based on search term
-    const filteredReservations = reservations.filter(reservation => 
-        reservation.date.includes(searchTerm) ||
-        reservation.status.toLowerCase().includes(searchTerm) ||
-        reservation.customer.toLowerCase().includes(searchTerm)
-    );
+    }, [customerId]);
 
     return (
         <div>
-            <TextField
-                label="Search Reservations"
-                variant="outlined"
-                style={{ margin: '20px 0' }}
-                fullWidth
-                onChange={handleSearch}
-            />
-            <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<AddIcon />}
-                onClick={() => alert('Implement opening the new reservation form.')}
-            >
-                New Reservation
-            </Button>
-
+            <Typography variant="h4" gutterBottom>
+                {customerId ? `Reservations for Customer ${customerId}` : "All Reservations"}
+            </Typography>
             <TableContainer component={Paper}>
-                <Table>
+                <Table aria-label="reservations table">
                     <TableHead>
                         <TableRow>
-                            <TableCell onClick={() => handleSort('date')}>Date</TableCell>
-                            <TableCell onClick={() => handleSort('status')}>Status</TableCell>
-                            <TableCell onClick={() => handleSort('customer')}>Customer</TableCell>
+                            <TableCell>Reservation ID</TableCell>
+                            <TableCell>Customer Name</TableCell>
+                            <TableCell>Table ID</TableCell>
+                            <TableCell>Start Date</TableCell>
+                            <TableCell>End Date</TableCell>
+                            <TableCell>Number of Guests</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Notes</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {filteredReservations.map((reservation) => (
-                            <TableRow key={reservation.id}>
-                                <TableCell>{reservation.date}</TableCell>
+                        {reservations.map((reservation) => (
+                            <TableRow key={reservation.reservation_id}>
+                                <TableCell>{reservation.reservation_id}</TableCell>
+                                <TableCell>{reservation.customer_name}</TableCell>
+                                <TableCell>{reservation.table_id}</TableCell>
+                                <TableCell>{reservation.start_date}</TableCell>
+                                <TableCell>{reservation.end_date}</TableCell>
+                                <TableCell>{reservation.no_guests}</TableCell>
                                 <TableCell>{reservation.status}</TableCell>
-                                <TableCell>{reservation.customer}</TableCell>
+                                <TableCell>{reservation.notes}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
