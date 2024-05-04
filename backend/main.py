@@ -105,6 +105,27 @@ def read_reservations(customer_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/today")
+def read_today_reservations():
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM VW_TODAY_RESERVATIONS")
+                reservations = cursor.fetchall()
+                return [{
+                    "reservation_id": row[0],
+                    "customer_name": row[1],
+                    "table_id": row[2],
+                    "start_date": row[3],
+                    "end_date": row[4],
+                    "no_guests": row[5],
+                    "status": row[6],
+                    "notes": row[7]
+                } for row in reservations]
+            # return {"today reservations": reservations_list}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
     
 @app.get("/table_types")
 def read_table_types():
