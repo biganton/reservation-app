@@ -19,6 +19,7 @@ function App() {
         <Route path="/add-customer" element={<AddCustomer />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/reservations/:customerId" element={<Reservations />} />
+        <Route path="/reservations/today" element={<Reservations />} />
 
 
       </Routes>
