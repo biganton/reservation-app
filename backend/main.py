@@ -286,3 +286,25 @@ def available_tables(start_date: datetime, end_date: datetime):
         return {'available_tables': tables}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+class TableType(BaseModel):
+    table_type_id: int
+
+@app.get("/available-table-types/", response_model=List[TableType])
+def get_available_table_types(start_date: datetime, end_date: datetime, db=Depends(get_db_connection)):
+    try:
+        with db.cursor() as cursor:
+            start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
+            end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute(f"""
+                SELECT * FROM TABLE(f_table_type_availability(
+                    TO_TIMESTAMP('{start_date_str}', 'YYYY-MM-DD HH24:MI:SS'), 
+                    TO_TIMESTAMP('{end_date_str}', 'YYYY-MM-DD HH24:MI:SS')
+                ))
+            """)
+            result = cursor.fetchall()
+            return [TableType(table_type_id=row[0]) for row in result]
+    except cx_Oracle.Error as e:
+        raise HTTPException(status_code=500, detail=str(e))

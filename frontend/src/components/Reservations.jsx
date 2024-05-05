@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, Button } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
 function Reservations() {
     const [reservations, setReservations] = useState([]);
     const [showTodayReservations, setShowTodayReservations] = useState(false);
-    const { customerId } = useParams(); // This will be undefined if no ID is in the URL
+    const { customerId } = useParams(); 
 
     useEffect(() => {
         const url = customerId
@@ -17,15 +18,13 @@ function Reservations() {
         fetch(url)
             .then(response => {
                 if (!response.ok) {
-                    // If not OK, throw an error to jump to the catch block
                     throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Fetched data:', data); // Debugging: log the fetched data
-                // Check if data contains the expected array format
-                if (data.customers) { // Make sure to access the correct key if the response is wrapped in an object
+                console.log('Fetched data:', data); 
+                if (data.customers) { 
                     setReservations(data.customers);
                 } else if (Array.isArray(data)) {
                     setReservations(data);
@@ -35,7 +34,7 @@ function Reservations() {
             })
             .catch(error => {
                 console.error('Error fetching reservations:', error.message);
-                setReservations([]); // Set to empty array on error
+                setReservations([]);
             });
     }, [customerId, showTodayReservations]);
 
@@ -52,7 +51,8 @@ function Reservations() {
             <Button variant="contained" onClick={handleShowTodayReservations}>
                 {showTodayReservations ? `All Reservations` : "Show Today's Reservations"}
                 
-            </Button>
+            </Button >
+            <Button variant="contained" component={RouterLink} to="/make-reservation"> Make New Reservation </Button>
             <TableContainer component={Paper}>
                 <Table aria-label="reservations table">
                     <TableHead>
