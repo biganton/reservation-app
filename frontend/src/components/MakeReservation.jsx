@@ -99,14 +99,15 @@ function MakeReservation() {
                         onChange={(e) => setTime(e.target.value)}
                         InputLabelProps={{ shrink: true }}
                         inputProps={{
-                            step: 300, // 5 minutes step
-                            min: "16:00", // 16:00 as the minimum time
-                            max: "21:00" // 21:00 as the maximum time
+                            step: 300, // Sets the step to 300 seconds (5 minutes)
+                            min: "16:00", // Minimum time set to 16:00
+                            max: "21:00" // Maximum time set to 21:00
                         }}
                         style={{ marginBottom: 20 }}
                     />
                     <Button onClick={() => setStep(3)} style={{ marginTop: 20 }}>Next</Button>
                 </>
+
             )}
             {step === 3 && (
                 <FormControl fullWidth style={{ marginTop: 20 }}>

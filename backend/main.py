@@ -308,3 +308,35 @@ def get_available_table_types(start_date: datetime, end_date: datetime, db=Depen
             return [TableType(table_type_id=row[0]) for row in result]
     except cx_Oracle.Error as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+class ReservationStatusUpdate(BaseModel):
+    reservation_id: int
+    new_status: str
+
+@app.post("/update_reservation_status")
+def update_reservation_status(update: ReservationStatusUpdate):
+    valid_statuses = {'C', 'N', 'P'}  
+    if update.new_status not in valid_statuses:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status provided.")
+
+    sql = """
+    BEGIN
+        p_modify_reservation_status(
+            p_reservation_id => :reservation_id,
+            p_new_status => :new_status
+        );
+    END;
+    """
+    try:
+        with get_db_connection() as connection:
+            cursor = connection.cursor()
+            cursor.execute(sql, {
+                'reservation_id': update.reservation_id,
+                'new_status': update.new_status
+            })
+            connection.commit()
+            return {"message": "Reservation status updated successfully"}
+    except Exception as e:
+        connection.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
