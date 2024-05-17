@@ -242,7 +242,7 @@ class Reservation(BaseModel):
     start_date: datetime
     end_date: datetime
     no_guests: int
-    notes: str
+    notes: str = None
 
 
 @app.post("/add_reservation")
@@ -262,20 +262,23 @@ def add_reservation(reservation: Reservation):
     try:
         with get_db_connection() as connection:
             cursor = connection.cursor()
-            cursor.execute(sql, {
-                "table_id": reservation.table_id,
-                "customer_id": reservation.customer_id,
-                "start_date": reservation.start_date,
-                "end_date": reservation.end_date,
-                "no_guests": reservation.no_guests,
-                "notes": reservation.notes
-            })
+            cursor.callproc('DBMS_OUTPUT.ENABLE', (None,))
+            cursor.execute(sql, reservation.dict())
+
+            messages = []
+            status_var = cursor.var(int)
+            line_var = cursor.var(str)
+            while True:
+                cursor.callproc('DBMS_OUTPUT.GET_LINE', (line_var, status_var))
+                if status_var.getvalue() != 0:
+                    break
+                messages.append(line_var.getvalue())
+
             connection.commit()
-            return {"message": "Reservation added successfully"}
+            return {"message": messages}
     except Exception as e:
         connection.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
 
 
 @app.get("/available_tables")
