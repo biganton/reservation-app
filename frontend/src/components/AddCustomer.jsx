@@ -17,9 +17,10 @@ function AddCustomer() {
                 phoneNumber,
                 email
             });
-            alert('Customer added successfully: ' + response.data);
+            // alert('Customer added successfully: ' + response.data);
+             alert(response.data.message);
         } catch (error) {
-            alert('Failed to add customer: ' + error.message);
+            alert(error.message);
         }
     };
 

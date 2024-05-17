@@ -22,6 +22,32 @@ function MakeReservation() {
             .catch(error => console.error('Error fetching customers:', error));
     }, []);
 
+    useEffect(() => {
+        if (step === 5) {
+            fetchAvailableTables();
+        }
+    }, [step]); // Fetch available tables only when step changes to 5
+
+    const fetchAvailableTables = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/available_tables', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    start_date: date('2024-05-18 20:00:00'),
+                    end_date: date('2024-05-18 22:00:00') // Assuming duration is same as start time
+                })
+            });
+            const data = await response.json();
+            setAvailableTables(data.available_tables);
+        } catch (error) {
+            console.error('Error fetching available tables:', error);
+        }
+    };
+
+
     const handleAddCustomer = () => {
         navigate('/add-customer');
     };
@@ -140,7 +166,21 @@ function MakeReservation() {
                 </FormControl>
             )}
             {step === 5 && (
-                <>
+                // <>
+                //     <FormControl fullWidth style={{ marginTop: 20 }}>
+                //         <InputLabel>Select Table</InputLabel>
+                //         <Select
+                //             value={selectedTable}
+                //             label="Select Table"
+                //             onChange={(e) => setSelectedTable(e.target.value)}
+                //         >
+
+                //         </Select>
+                //     </FormControl>
+                //     <Button onClick={() => setStep(6)} style={{ marginTop: 20 }}>Next</Button>
+                // </>
+
+                    <>
                     <FormControl fullWidth style={{ marginTop: 20 }}>
                         <InputLabel>Select Table</InputLabel>
                         <Select
@@ -149,8 +189,8 @@ function MakeReservation() {
                             onChange={(e) => setSelectedTable(e.target.value)}
                         >
                             {availableTables.map(table => (
-                                <MenuItem key={table.table_id} value={table.table_id}>
-                                    Table {table.table_id} - Seats {table.no_seats}
+                                <MenuItem key={table.table_type_name} value={table.table_type_name}>
+                                    Table {table.table_type_name}
                                 </MenuItem>
                             ))}
                         </Select>

@@ -217,9 +217,20 @@ def add_customer(customer: Customer):
     try:
         with get_db_connection() as connection:
             cursor = connection.cursor()
+            cursor.callproc('DBMS_OUTPUT.ENABLE', (None,))
             cursor.execute(sql, customer.dict())
+
+            messages = []
+            status_var = cursor.var(int)
+            line_var = cursor.var(str)
+            while True:
+                cursor.callproc('DBMS_OUTPUT.GET_LINE', (line_var, status_var))
+                if status_var.getvalue() != 0:
+                    break
+                messages.append(line_var.getvalue())
+
             connection.commit()
-            return {"message": "Customer added successfully"}
+            return {"message": messages}
     except Exception as e:
         connection.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
@@ -279,9 +290,7 @@ def available_tables(start_date: datetime, end_date: datetime):
                 cursor.execute(sql, {'start_date': start_date, 'end_date': end_date})
                 result = cursor.fetchall()
                 tables = [{
-                    'table_id': row[0],
-                    'no_seats': row[1],
-                    'table_type_id': row[2]
+                    'table_type_name': row[0]
                 } for row in result]
         return {'available_tables': tables}
     except Exception as e:
