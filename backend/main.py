@@ -352,3 +352,35 @@ def update_reservation_status(update: ReservationStatusUpdate):
     except Exception as e:
         connection.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+
+
+
+
+class TableUtilization(BaseModel):
+    table_id: int
+    no_seats: int
+    type_name: str
+    total_minutes_reserved: int
+    utilization_percentage: float
+
+@app.get("/table_utilization", response_model=List[TableUtilization])
+def get_table_utilization():
+    try:
+        with get_db_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT TABLE_ID, NO_SEATS, TYPE_NAME, TOTAL_MINUTES_RESERVED, UTILIZATION_PERCENTAGE FROM VIEW_TABLE_UTILIZATION")
+                rows = cursor.fetchall()
+                table_utilization_data = [
+                    TableUtilization(
+                        table_id=row[0],
+                        no_seats=row[1],
+                        type_name=row[2],
+                        total_minutes_reserved=row[3],
+                        utilization_percentage=row[4]
+                    )
+                    for row in rows
+                ]
+        return table_utilization_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

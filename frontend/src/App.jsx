@@ -6,6 +6,7 @@ import Reservations from './components/Reservations';
 import AddCustomer from './components/AddCustomer';
 import Customers from './components/Customers';
 import MakeReservation from './components/MakeReservation';
+import Raport from './components/Raport';
 function App() {
   return (
     <Router>
@@ -18,6 +19,8 @@ function App() {
         <Route path="/reservations/:customerId" element={<Reservations />} />
         <Route path="/reservations/today" element={<Reservations />} />
         <Route path="/make-reservation" element={<MakeReservation />} />
+        <Route path="/raport" element={<Raport />} />
+
 
 
 
