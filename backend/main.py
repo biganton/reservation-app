@@ -282,22 +282,21 @@ def add_reservation(reservation: Reservation):
 
 
 @app.get("/available_tables")
-def available_tables(start_date: datetime, end_date: datetime):
-    """Endpoint to fetch available tables within a specified time range."""
+def available_tables(start_date: datetime, end_date: datetime, guests_no: int):
+    """Endpoint to fetch available tables within a specified time range for a specific number of guests."""
     sql = """
-        SELECT * FROM TABLE(f_tables_availability_hours(:start_date, :end_date))
+        SELECT * FROM TABLE(f_tables_availability_hours(:start_date, :end_date, :guests_no))
     """
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                cursor.execute(sql, {'start_date': start_date, 'end_date': end_date})
+                cursor.execute(sql, {'start_date': start_date, 'end_date': end_date, 'guests_no': guests_no})
                 result = cursor.fetchall()
-                tables = [{
-                    'table_type_name': row[0]
-                } for row in result]
+                tables = [{'table_type_name': row[0]} for row in result]
         return {'available_tables': tables}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
     
 
 

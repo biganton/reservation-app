@@ -40,7 +40,7 @@ function MakeReservation() {
         console.log(`Start Date: ${startDate}, End Date: ${endDate}`);
         console.log(`Start Local String: ${startLocalString}, End Local String: ${endLocalString}`);
 
-        const url = `http://localhost:8000/available_tables?start_date=${encodeURIComponent(startLocalString)}&end_date=${encodeURIComponent(endLocalString)}`;
+        const url = `http://localhost:8000/available_tables?start_date=${encodeURIComponent(startLocalString)}&end_date=${encodeURIComponent(endLocalString)}&guests_no=${guests}`;
         
         try {
             const response = await fetch(url, {
