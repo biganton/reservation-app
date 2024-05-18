@@ -15,6 +15,7 @@ function MakeReservation() {
     const [time, setTime] = useState('18:00'); // Default time set to 18:00
     const [notes, setNotes] = useState(''); // Notes for reservation
     const [duration, setDuration] = useState(1); // Duration in hours
+    const [tableId, setTableId] = useState(null);
 
     useEffect(() => {
         fetch('http://localhost:8000/customers')
@@ -26,6 +27,9 @@ function MakeReservation() {
     useEffect(() => {
         if (step === 5) {
             fetchAvailableTables();
+        }
+        if (step === 6) {
+            fetchTableID();
         }
     }, [step]); // Fetch available tables only when step changes to 5
 
@@ -56,6 +60,35 @@ function MakeReservation() {
         }
     };
 
+
+    const fetchTableID = async () => {
+        const startDate = new Date(`${date}T${time}:00`);
+        const endDate = new Date(startDate);
+        endDate.setHours(startDate.getHours() + duration);
+
+        const startLocalString = startDate.toLocaleString('sv-SE').replace(' ', 'T');
+        const endLocalString = endDate.toLocaleString('sv-SE').replace(' ', 'T');
+
+        console.log(`Start Date: ${startDate}, End Date: ${endDate}`);
+        console.log(`Start Local String: ${startLocalString}, End Local String: ${endLocalString}`);
+        console.log(`selected Table: ${selectedTable}`);
+
+        const url = `http://localhost:8000/choosen_table_id?type_name=${selectedTable}&start_date=${encodeURIComponent(startLocalString)}&end_date=${encodeURIComponent(endLocalString)}&guests_no=${guests}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            setTableId(data.choosen_table_id[0].ctable_id);
+        } catch (error) {
+            console.error('Error fetching table id:', error);
+        }
+    };
+
     const handleAddCustomer = () => {
         navigate('/add-customer');
     };
@@ -65,8 +98,10 @@ function MakeReservation() {
         const endDate = new Date(startDate);
         endDate.setHours(startDate.getHours() + duration);
 
+         console.log(`selected Table: ${tableId}`);
+
         const reservation = {
-            table_id: selectedTable,
+            table_id: tableId,
             customer_id: selectedCustomer.customer_id,
             start_date: startDate.toLocaleString('sv-SE').replace(' ', 'T'),
             end_date: endDate.toLocaleString('sv-SE').replace(' ', 'T'),
@@ -231,7 +266,7 @@ function MakeReservation() {
                 <>
                     <Typography style={{ marginTop: 20 }}>
                         Confirm Reservation:
-                        {selectedCustomer?.firstname} on {date} {time} for {guests} guests at table {selectedTable} for {duration} hours.
+                        {selectedCustomer?.firstname} on {date} {time} for {guests} guests at table {selectedTable} {tableId} for {duration} hours.
                     </Typography>
                     <TextField
                         label="Notes"

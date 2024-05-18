@@ -297,28 +297,48 @@ def available_tables(start_date: datetime, end_date: datetime, guests_no: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+
+
+@app.get("/choosen_table_id")
+def choosen_table_id(type_name: str, start_date: datetime, end_date: datetime, guests_no: int):
+    """Endpoint to fetch available tables within a specified time range for a specific number of guests."""
+    sql = """
+        SELECT * FROM TABLE(f_get_first_available_table_by_type2(:type_name, :start_date, :end_date, :guests_no))
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(sql, {'type_name': type_name, 'start_date': start_date, 'end_date': end_date, 'guests_no': guests_no})
+                result = cursor.fetchall()
+                tables = [{'ctable_id': row[0]} for row in result]
+        return {'choosen_table_id': tables}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
     
 
 
-class TableType(BaseModel):
-    table_type_id: int
+# class TableType(BaseModel):
+#     table_type_id: int
 
-@app.get("/available-table-types/", response_model=List[TableType])
-def get_available_table_types(start_date: datetime, end_date: datetime, db=Depends(get_db_connection)):
-    try:
-        with db.cursor() as cursor:
-            start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
-            end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute(f"""
-                SELECT * FROM TABLE(f_table_type_availability(
-                    TO_TIMESTAMP('{start_date_str}', 'YYYY-MM-DD HH24:MI:SS'), 
-                    TO_TIMESTAMP('{end_date_str}', 'YYYY-MM-DD HH24:MI:SS')
-                ))
-            """)
-            result = cursor.fetchall()
-            return [TableType(table_type_id=row[0]) for row in result]
-    except cx_Oracle.Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.get("/available-table-types/", response_model=List[TableType])
+# def get_available_table_types(start_date: datetime, end_date: datetime, db=Depends(get_db_connection)):
+#     try:
+#         with db.cursor() as cursor:
+#             start_date_str = start_date.strftime('%Y-%m-%d %H:%M:%S')
+#             end_date_str = end_date.strftime('%Y-%m-%d %H:%M:%S')
+#             cursor.execute(f"""
+#                 SELECT * FROM TABLE(f_table_type_availability(
+#                     TO_TIMESTAMP('{start_date_str}', 'YYYY-MM-DD HH24:MI:SS'), 
+#                     TO_TIMESTAMP('{end_date_str}', 'YYYY-MM-DD HH24:MI:SS')
+#                 ))
+#             """)
+#             result = cursor.fetchall()
+#             return [TableType(table_type_id=row[0]) for row in result]
+#     except cx_Oracle.Error as e:
+#         raise HTTPException(status_code=500, detail=str(e))
     
 
 class ReservationStatusUpdate(BaseModel):
