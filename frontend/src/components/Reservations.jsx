@@ -6,7 +6,7 @@ import { Link as RouterLink } from 'react-router-dom';
 function Reservations() {
     const [reservations, setReservations] = useState([]);
     const [showTodayReservations, setShowTodayReservations] = useState(false);
-    const { customerId } = useParams(); 
+    const { customerId } = useParams();
 
     useEffect(() => {
         const url = customerId
@@ -23,8 +23,8 @@ function Reservations() {
                 return response.json();
             })
             .then(data => {
-                console.log('Fetched data:', data); 
-                if (data.customers) { 
+                console.log('Fetched data:', data);
+                if (data.customers) {
                     setReservations(data.customers);
                 } else if (Array.isArray(data)) {
                     setReservations(data);
@@ -38,9 +38,37 @@ function Reservations() {
             });
     }, [customerId, showTodayReservations]);
 
+    const updateReservationStatus = (reservationId, newStatus) => {
+        fetch(`http://localhost:8000/update_reservation_status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ reservation_id: reservationId, new_status: newStatus })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Update response:', data);
+            const updatedReservations = reservations.map(reservation => {
+                if (reservation.reservation_id === reservationId) {
+                    return { ...reservation, status: newStatus };
+                }
+                return reservation;
+            });
+            setReservations(updatedReservations);
+        })
+        .catch(error => {
+            console.error('Error updating reservation status:', error);
+        });
+    };
+
     const handleShowTodayReservations = () => {
         setShowTodayReservations(prevValue => !prevValue);
-        // navigate(`/reservations/today`);
     };
 
     return (
@@ -50,7 +78,6 @@ function Reservations() {
             </Typography>
             <Button variant="contained" onClick={handleShowTodayReservations}>
                 {showTodayReservations ? `All Reservations` : "Show Today's Reservations"}
-                
             </Button >
             <Button variant="contained" component={RouterLink} to="/make-reservation"> Make New Reservation </Button>
             <TableContainer component={Paper}>
@@ -84,16 +111,24 @@ function Reservations() {
                                     <Button 
                                         variant="contained" 
                                         color="primary" 
-                                        onClick={() => handleCustomerClick(customer.customer_id)}>
+                                        onClick={() => updateReservationStatus(reservation.reservation_id, 'P')}>
                                         Confirm
                                     </Button>
                                 </TableCell>
                                 <TableCell>
                                     <Button 
                                         variant="contained" 
-                                        color="primary" 
-                                        onClick={() => handleCustomerClick(customer.customer_id)}>
+                                        color="secondary" 
+                                        onClick={() => updateReservationStatus(reservation.reservation_id, 'C')}>
                                         Cancel
+                                    </Button>
+                                </TableCell>
+                                <TableCell>
+                                    <Button 
+                                        variant="contained" 
+                                        color="primary" 
+                                        onClick={() => updateReservationStatus(reservation.reservation_id, 'N')}>
+                                        Set as New
                                     </Button>
                                 </TableCell>
                             </TableRow>

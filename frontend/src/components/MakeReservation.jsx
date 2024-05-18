@@ -10,10 +10,12 @@ function MakeReservation() {
     const [searchPhone, setSearchPhone] = useState('');
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]); // YYYY-MM-DD format
     const [guests, setGuests] = useState(1);
-    const [availableTables, setAvailableTables] = useState([]);
-    const [selectedTable, setSelectedTable] = useState(null);
-    const [time, setTime] = useState('16:00'); // Default time set to 16:00
-
+    const [availableTables, setAvailableTables] = useState([]); // Initialize as empty array
+    const [selectedTable, setSelectedTable] = useState(''); // Initialize with empty string
+    const [time, setTime] = useState('18:00'); // Default time set to 18:00
+    const [notes, setNotes] = useState(''); // Notes for reservation
+    const [duration, setDuration] = useState(1); // Duration in hours
+    const [tableId, setTableId] = useState(null);
 
     useEffect(() => {
         fetch('http://localhost:8000/customers')
@@ -22,11 +24,114 @@ function MakeReservation() {
             .catch(error => console.error('Error fetching customers:', error));
     }, []);
 
+    useEffect(() => {
+        if (step === 5) {
+            fetchAvailableTables();
+        }
+        if (step === 6) {
+            fetchTableID();
+        }
+    }, [step]); // Fetch available tables only when step changes to 5
+
+    const fetchAvailableTables = async () => {
+        const startDate = new Date(`${date}T${time}:00`);
+        const endDate = new Date(startDate);
+        endDate.setHours(startDate.getHours() + duration);
+
+        const startLocalString = startDate.toLocaleString('sv-SE').replace(' ', 'T');
+        const endLocalString = endDate.toLocaleString('sv-SE').replace(' ', 'T');
+
+        console.log(`Start Date: ${startDate}, End Date: ${endDate}`);
+        console.log(`Start Local String: ${startLocalString}, End Local String: ${endLocalString}`);
+
+        const url = `http://localhost:8000/available_tables?start_date=${encodeURIComponent(startLocalString)}&end_date=${encodeURIComponent(endLocalString)}&guests_no=${guests}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            setAvailableTables(data.available_tables || []);
+        } catch (error) {
+            console.error('Error fetching available tables:', error);
+        }
+    };
+
+
+    const fetchTableID = async () => {
+        const startDate = new Date(`${date}T${time}:00`);
+        const endDate = new Date(startDate);
+        endDate.setHours(startDate.getHours() + duration);
+
+        const startLocalString = startDate.toLocaleString('sv-SE').replace(' ', 'T');
+        const endLocalString = endDate.toLocaleString('sv-SE').replace(' ', 'T');
+
+        console.log(`Start Date: ${startDate}, End Date: ${endDate}`);
+        console.log(`Start Local String: ${startLocalString}, End Local String: ${endLocalString}`);
+        console.log(`selected Table: ${selectedTable}`);
+
+        const url = `http://localhost:8000/choosen_table_id?type_name=${selectedTable}&start_date=${encodeURIComponent(startLocalString)}&end_date=${encodeURIComponent(endLocalString)}&guests_no=${guests}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            setTableId(data.choosen_table_id[0].ctable_id);
+        } catch (error) {
+            console.error('Error fetching table id:', error);
+        }
+    };
+
     const handleAddCustomer = () => {
         navigate('/add-customer');
     };
 
-    
+    const handleConfirmReservation = async () => {
+        const startDate = new Date(`${date}T${time}:00`);
+        const endDate = new Date(startDate);
+        endDate.setHours(startDate.getHours() + duration);
+
+         console.log(`selected Table: ${tableId}`);
+
+        const reservation = {
+            table_id: tableId,
+            customer_id: selectedCustomer.customer_id,
+            start_date: startDate.toLocaleString('sv-SE').replace(' ', 'T'),
+            end_date: endDate.toLocaleString('sv-SE').replace(' ', 'T'),
+            no_guests: guests,
+            notes: notes
+        };
+
+        console.log(`Reservation Data:`, reservation);
+
+        try {
+            const response = await fetch('http://localhost:8000/add_reservation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(reservation)
+            });
+
+            if (response.ok) {
+                alert('Reservation added successfully');
+                navigate('/');
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.detail}`);
+            }
+        } catch (error) {
+            console.error('Error adding reservation:', error);
+            alert('Failed to add reservation');
+        }
+    };
 
     const filteredCustomers = customers.filter(customer => customer.phone_number.includes(searchPhone));
 
@@ -99,9 +204,9 @@ function MakeReservation() {
                         onChange={(e) => setTime(e.target.value)}
                         InputLabelProps={{ shrink: true }}
                         inputProps={{
-                            step: 300, // 5 minutes step
-                            min: "16:00", // 16:00 as the minimum time
-                            max: "21:00" // 21:00 as the maximum time
+                            step: 300, // Sets the step to 300 seconds (5 minutes)
+                            min: "16:00", // Minimum time set to 16:00
+                            max: "21:00" // Maximum time set to 21:00
                         }}
                         style={{ marginBottom: 20 }}
                     />
@@ -125,11 +230,11 @@ function MakeReservation() {
             )}
             {step === 4 && (
                 <FormControl fullWidth style={{ marginTop: 20 }}>
-                    <InputLabel>Reservation duration</InputLabel>
+                    <InputLabel>Reservation Duration (hours)</InputLabel>
                     <Select
-                        value={guests}
-                        label="Reservation duration"
-                        onChange={(e) => setGuests(e.target.value)}
+                        value={duration}
+                        label="Reservation Duration"
+                        onChange={(e) => setDuration(e.target.value)}
                     >
                         {[1, 2, 3].map(option => (
                             <MenuItem key={option} value={option}>{option}</MenuItem>
@@ -148,8 +253,8 @@ function MakeReservation() {
                             onChange={(e) => setSelectedTable(e.target.value)}
                         >
                             {availableTables.map(table => (
-                                <MenuItem key={table.table_id} value={table.table_id}>
-                                    Table {table.table_id} - Seats {table.no_seats}
+                                <MenuItem key={table.table_type_name} value={table.table_type_name}>
+                                    Table {table.table_type_name}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -161,9 +266,18 @@ function MakeReservation() {
                 <>
                     <Typography style={{ marginTop: 20 }}>
                         Confirm Reservation:
-                        {selectedCustomer.firstname} on {date} {time} for {guests} guests at table {selectedTable}.
+                        {selectedCustomer?.firstname} on {date} {time} for {guests} guests at table {selectedTable} {tableId} for {duration} hours.
                     </Typography>
-                    <Button onClick={() => console.log('Reservation Confirmed')} color="primary" variant="contained" style={{ marginTop: 20 }}>
+                    <TextField
+                        label="Notes"
+                        variant="outlined"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        multiline
+                        rows={4}
+                        style={{ marginTop: 20, marginBottom: 20 }}
+                    />
+                    <Button onClick={handleConfirmReservation} color="primary" variant="contained" style={{ marginTop: 20 }}>
                         Confirm Reservation
                     </Button>
                 </>

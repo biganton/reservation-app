@@ -15,6 +15,9 @@ function NavBar() {
         <Button color="inherit" component={RouterLink} to="/customers">
           Customers
         </Button>
+        <Button color="inherit" component={RouterLink} to="/raport">
+          Raport
+        </Button>
       </Toolbar>
     </AppBar>
   );
