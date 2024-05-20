@@ -15,8 +15,6 @@ create sequence S_TYPES
 
 create or replace type available_tables as OBJECT
 (
---     table_id int,
---     no_seats int,
     table_type_name varchar2(50)
 )
 /
